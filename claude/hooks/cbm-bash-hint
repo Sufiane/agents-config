@@ -1,0 +1,20 @@
+#!/bin/bash
+# PreToolUse Bash hook: when the command looks like grep/rg/find/fd/ack/ag,
+# nudge toward codebase-memory-mcp structural search tools. Non-blocking:
+# any error path exits 0 with no output.
+CMD=$(python3 -c "import json,sys
+try:
+    d=json.load(sys.stdin)
+    print(d.get('tool_input',{}).get('command',''))
+except Exception:
+    pass" 2>/dev/null || true)
+
+case "$CMD" in
+  *grep*|*"rg "*|*ripgrep*|*"find "*|*"fd "*|*"ack "*|*"ag "*)
+    cat <<'JSON'
+{"hookSpecificOutput":{"hookEventName":"PreToolUse","additionalContext":"codebase-memory-mcp: for structural code lookups (functions, callers, defs, routes) prefer the MCP tools search_graph / search_code / trace_path / get_code_snippet over shell grep — graph-augmented, precise ranges. Shell grep is fine for text, configs, and non-code files."}}
+JSON
+    ;;
+esac
+
+exit 0
